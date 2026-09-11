@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="de"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Hupsclick">
+    <meta name="publisher" content="Hupsclick">
+    <meta name="description" content="HUPSCLICK UHR MIT TAGESFORTSCHRITT WECKFUNKTION HUD DESIGN">
+    <meta name="keywords" content="HUPSCLICK, UHR MIT TAGESFORTSCHRITT, WECKFUNKTION, HUD DESIGN, Deutsch">
+    <meta name="copyright" content="Hupsclick">
+    <meta property="og:title" content="HUPSCLICK UHR MIT TAGESFORTSCHRITT WECKFUNKTION HUD DESIGN">
+    <meta property="og:description" content="HUPSCLICK UHR MIT TAGESFORTSCHRITT WECKFUNKTION HUD DESIGN">
+    <meta property="og:type" content="website">
+    <link rel="shortcut icon" href="assets/icon.ico">
+<title>Uhr mit Weckfunktion</title>
+
+<style>
+@font-face {
+  font-family: 'Digital';
+  src: url('assets/digital.ttf') format('truetype');
+  font-display: swap;
+}
+html {
+  scroll-behavior: auto;
+}
+body {
+  margin: 0;
+  height: 100vh;
+  background: #000;
+  color: #00ff9f;
+  font-family: "Palatino Linotype", Georgia, serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+}
+
+/* ================= TIME ================= */
+.time {
+  position: relative;
+  top: 0%;
+  left: 0%;
+  font-family: 'Digital', monospace;
+  font-size: clamp(4rem, 15vw, 12rem);
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 30px #00ff9f, 0 0 60px #00ff9f;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+/* ================= DATE ================= */
+.date {
+  position: relative;
+  top: 10%;
+  left: 0%;
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  letter-spacing: 1em;
+  text-shadow: 0 0 20px #00ff9f;
+  margin-bottom: 4rem;
+  text-align: center;
+}
+
+/* ================= PROGRESS BAR ================= */
+.progress-bar-wrapper {
+  width: 90vw;
+  max-width: 850px;
+  height: 30px;
+
+  border: 2px solid #00ff9f;
+  border-radius: 9999px;
+
+  background: transparent; /* 🔥 wieder transparent wie gewünscht */
+  position: relative;
+
+  overflow: hidden;
+  margin-bottom: 1.2rem;
+}
+
+/* Füllung */
+.progress-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 0%;
+  background: rgba(0, 255, 159, 0.15);
+  transition: width 0.2s linear;
+}
+
+/* ================= BALL (IM BALKEN!) ================= */
+.progress-ball {
+  position: absolute;
+  top: 50%;
+  left: 0%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  background: #00ff9f;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00ff9f;
+}
+
+/* ================= ALARM ================= */
+.alarm-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-width: 95vw;
+}
+
+.alarm-controls input,
+.alarm-controls button {
+  background: #000;
+  color: #00ff9f;
+  border: 1px solid #00ff9f;
+  padding: 8px 10px;
+  font-family: inherit;
+  cursor: pointer;
+  flex: 1 1 90px;
+  text-align: center;
+}
+
+.alarm-controls button {
+  font-size: 1.2rem;
+  height: 45px;
+}
+
+/* STATUS */
+.alarm-status {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  opacity: 0.7;
+  letter-spacing: 0.2em;
+  text-align: center;
+}
+
+.alarm-status.active {
+  opacity: 1;
+}
+
+/* FOOTER */
+footer {
+  position: fixed;
+  bottom: 10px;
+  width: 100%;
+  text-align: center;
+  opacity: 0.5;
+  font-size: 0.65rem;
+  letter-spacing: 6px;
+}
+
+/* ================= LANDSCAPE ================= */
+@media (max-height: 480px) and (orientation: landscape) {
+
+  body {
+    justify-content: flex-start;
+    padding-top: 8px;
+  }
+
+  .data {
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    margin-bottom: 0.2rem;
+    }
+	
+  .time {
+    top: 0%;
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    margin-bottom: 0.3rem;
+  }
+
+  .progress-bar-wrapper {
+    height: 18px;
+    margin-bottom: 0.8rem;
+  }
+
+  .progress-ball {
+    width: 10px;
+    height: 10px;
+  }
+
+  .alarm-controls {
+    gap: 6px;
+  }
+}
+
+/* ================= PORTRAIT ================= */
+@media (max-height: 480px) and (orientation: landscape) {
+
+  .time {
+    margin-bottom: 0.3rem;
+	font-size: 3.4rem;
+  }
+
+  .progress-bar-wrapper {
+    transform: translateY(6px);
+  }
+}
+
+@media (max-width: 420px) and (orientation: portrait) {
+
+  body {
+    justify-content: space-between;
+    padding: 8px 0;
+  }
+
+  .time {
+    font-size: clamp(3.2rem, 13vw, 6.5rem);
+  }
+
+  .progress-bar-wrapper {
+    margin: 0.5rem 0 1rem 0;
+  }
+
+  footer {
+    position: static;
+    margin-bottom: 10px;
+	font-size: 0.6rem;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="date" id="date-display">00.00.0000</div>
+<div class="time" id="time-display">00:00:00</div>
+
+<!-- PROGRESS BAR -->
+<div class="progress-bar-wrapper">
+  <div class="progress-bar" id="progress-bar"></div>
+  <div class="progress-ball" id="progress-ball"></div>
+</div>
+
+<!-- ALARM -->
+<div class="alarm-controls">
+  <input type="time" id="alarm-input">
+  <button onclick="setAlarm()">⏰</button>
+  <button onclick="stopAlarm()">⛔</button>
+</div>
+
+<div id="alarm-status" class="alarm-status">Kein Wecker aktiv</div>
+
+<footer>©HUPSCLICK Manfred Häcker</footer>
+
+<script>
+const timeDisplay = document.getElementById("time-display");
+const dateDisplay = document.getElementById("date-display");
+const progressBar = document.getElementById("progress-bar");
+const progressBall = document.getElementById("progress-ball");
+const alarmStatus = document.getElementById("alarm-status");
+
+let alarmTime = null;
+let alarmActive = false;
+let alarmTriggered = false;
+
+const alarmSound = new Audio("assets/hahn.mp3");
+alarmSound.loop = true;
+
+/* ================= ALARM SETZEN ================= */
+function setAlarm() {
+  const input = document.getElementById("alarm-input").value;
+  if (!input) return;
+
+  alarmTime = input;
+  alarmActive = true;
+  alarmTriggered = false;
+
+  // Wichtig für mobile Browser (Audio freischalten)
+  alarmSound.play().then(() => {
+    alarmSound.pause();
+    alarmSound.currentTime = 0;
+  }).catch(() => {});
+
+  updateAlarmStatus();
+}
+
+/* ================= ALARM STOPPEN ================= */
+function stopAlarm() {
+  alarmSound.pause();
+  alarmSound.currentTime = 0;
+  alarmActive = false;
+  alarmTriggered = false;
+
+  updateAlarmStatus();
+}
+
+/* ================= STATUS ================= */
+function updateAlarmStatus() {
+  if (alarmActive && alarmTime) {
+    alarmStatus.textContent = "🐓 Hahn steht bereit: " + alarmTime;
+    alarmStatus.classList.add("active");
+  } else {
+    alarmStatus.textContent = "Kein Wecker aktiv";
+    alarmStatus.classList.remove("active");
+  }
+}
+
+/* ================= HELFER ================= */
+function pad(n) {
+  return n.toString().padStart(2, "0");
+}
+
+/* ================= CLOCK ================= */
+function updateClock() {
+  const now = new Date();
+
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const seconds = now.getSeconds();
+
+  const h = pad(hours);
+  const m = pad(minutes);
+  const s = pad(seconds);
+
+  timeDisplay.textContent = `${h}:${m}:${s}`;
+
+  const d = pad(now.getDate());
+  const mo = pad(now.getMonth() + 1);
+  const y = now.getFullYear();
+
+  dateDisplay.textContent = `${d}.${mo}.${y}`;
+
+  /* ================= PROGRESS ================= */
+  const totalSeconds = 86400;
+  const secondsPassed = hours * 3600 + minutes * 60 + seconds;
+  const progress = secondsPassed / totalSeconds;
+
+  progressBar.style.width = (progress * 100) + "%";
+  progressBall.style.left = (progress * 100) + "%";
+
+  /* ================= ALARM LOGIK ================= */
+  if (alarmActive && alarmTime && !alarmTriggered) {
+    const nowMinutes = hours * 60 + minutes;
+
+    const [ah, am] = alarmTime.split(":").map(Number);
+    const alarmMinutes = ah * 60 + am;
+
+    // 🔥 WICHTIG: >= statt === (verpasst keine Zeit mehr)
+    if (nowMinutes >= alarmMinutes) {
+      alarmSound.play().catch(() => {});
+      alarmTriggered = true;
+    }
+  }
+
+  /* ================= RESET UM MITTERNACHT ================= */
+  if (hours === 0 && minutes === 0 && seconds < 2) {
+    alarmTriggered = false;
+  }
+}
+
+/* ================= TIMER ================= */
+updateClock();
+setInterval(updateClock, 1000);
+
+/* ================= WAKE-UP FIX ================= */
+/* Wenn Tab/App wieder aktiv wird → sofort prüfen */
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    updateClock();
+  }
+});
+</script>
+
+</body>
+</html>
+
+
