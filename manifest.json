@@ -1,0 +1,24 @@
+{
+  "name": "Weckuhr 1.1 PRO",
+  "short_name": "Weckuhr",
+  "description": "HUPSCLICK UHR MIT TAGESFORTSCHRITT WECKFUNKTION HUD DESIGN",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#05080a",
+  "theme_color": "#05080a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
