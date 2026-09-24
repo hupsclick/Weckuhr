@@ -273,6 +273,7 @@
   }
   .alarm-controls input[type="time"],
   .alarm-controls input[type="text"],
+  .alarm-controls input[type="file"],
   .alarm-controls select {
     width: 100%;
     background: rgba(255, 255, 255, 0.02);
@@ -287,6 +288,23 @@
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .alarm-controls input[type="text"] { text-align: left; }
+  .alarm-controls input[type="file"] {
+    cursor: pointer;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+  .alarm-controls input[type="file"]::file-selector-button {
+    background: rgba(73, 255, 192, 0.12);
+    color: var(--hud-accent);
+    border: 1px solid var(--hud-border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    margin-right: 10px;
+    font-family: var(--font-ui);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
   .alarm-controls select {
     text-align: left;
     background-image:
@@ -690,7 +708,7 @@
 </head>
 <body>
   <header>
-    <div class="logo">Weckuhr&nbsp;<span>1.1 PRO</span></div>
+    <div class="logo">Weckuhr&nbsp;<span>1.2 PRO</span></div>
     <div class="header-actions">
       <button
         id="infoTrigger"
@@ -751,6 +769,10 @@
             </div>
           </div>
           <div class="field">
+            <label class="field-label" for="alarm-sound-file">Eigener Wecksound (optional)</label>
+            <input type="file" id="alarm-sound-file" accept="audio/*" title="Eigenen Wecksound vom Gerät laden">
+          </div>
+          <div class="field">
             <label class="field-label" for="alarm-text">Wecktext</label>
             <input type="text" id="alarm-text" placeholder="Wecktext eingeben (bei Auswahl Wecktext)" maxlength="120" title="Eigener Wecktext">
           </div>
@@ -759,7 +781,6 @@
             <select id="voice-gender" title="Stimme für den Wecktext wählen">
               <option value="auto">Automatisch</option>
               <option value="female">Weiblich</option>
-              <option value="male">Männlich</option>
             </select>
           </div>
           <div class="alarm-actions">
@@ -772,7 +793,6 @@
     </main>
     <footer class="page-footer">© HUPSCLICK Manfred Häcker</footer>
   </div>
-
   <!-- INFO-MODAL -->
   <div
     id="infoModal"
@@ -807,7 +827,6 @@
       </footer>
     </section>
   </div>
-
   <!-- KAFFEE-MODAL -->
   <div
     id="coffeeModal"
@@ -820,7 +839,7 @@
     <section class="coffee-modal-card" role="document">
       <header class="coffee-modal-header">
         <h2 id="coffeeModalTitle" class="coffee-modal-title">
-          Weckuhr <span>1.1 PRO</span>
+          Weckuhr <span>1.2 PRO</span>
         </h2>
         <div class="coffee-modal-subtitle">
           Eine private App von Hupsclick
@@ -831,7 +850,7 @@
         <div class="coffee-modal-created-label">Erstellt von</div>
         <div class="coffee-modal-author">Manfred&nbsp;<span>Häcker</span></div>
         <p class="coffee-modal-description">
-          Weckuhr 1.1 PRO überträgt keine Daten an mich als Entwickler.
+          Weckuhr 1.2 PRO überträgt keine Daten an mich als Entwickler.
           Dennoch kann ich keine Verantwortung für Datenverarbeitungen übernehmen,
           die durch das verwendete Gerät, den Browser, das Betriebssystem oder
           installierte Drittanbieter-Dienste erfolgen.
@@ -858,10 +877,8 @@
       </footer>
     </section>
   </div>
-
   <script>
     "use strict";
-
     /* ================= UHR / WECKER ================= */
     const timeDisplay = document.getElementById("time-display");
     const dateDisplay = document.getElementById("date-display");
@@ -872,7 +889,7 @@
     const alarmTextInput = document.getElementById("alarm-text");
     const alarmModeSelect = document.getElementById("alarm-mode");
     const voiceGenderSelect = document.getElementById("voice-gender");
-
+    const soundFileInput = document.getElementById("alarm-sound-file");
     let alarmTime = null;          // "HH:MM"
     let alarmText = "";
     let alarmMode = "sound";
@@ -881,10 +898,10 @@
     let alarmTriggered = false;
     let speechLoopActive = false;
     let targetAlarmDate = null;    // Date-Objekt der nächsten Auslösezeit
-
+    let customSoundUrl = null;     // Object-URL für eigenen Wecksound
+    let usingCustomSound = false;
     /* ================= WAKE LOCK ================= */
     let wakeLock = null;
-
     async function requestWakeLock() {
       if (!("wakeLock" in navigator)) return;
       try {
@@ -896,7 +913,6 @@
         console.warn("Wake Lock konnte nicht aktiviert werden:", err);
       }
     }
-
     async function releaseWakeLock() {
       if (wakeLock) {
         try {
@@ -905,7 +921,6 @@
         wakeLock = null;
       }
     }
-
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible") {
         updateClock();
@@ -918,7 +933,6 @@
         }
       }
     });
-
     /* ================= STIMMEN ================= */
     // Erweiterte Listen für bessere Trefferquote auf Android / Samsung / Chrome
     const FEMALE_VOICE_HINTS = [
@@ -931,25 +945,19 @@
       "daniel", "ralf", "jonas", "male", "männlich", "google deutsch männlich",
       "de-de-x-deg", "de-de-x-deh", "de-de-x-dei", "de-de-x-dej"
     ];
-
     function pickGermanVoice(gender) {
       if (!window.speechSynthesis) return null;
-
       const allVoices = window.speechSynthesis.getVoices();
       const germanVoices = allVoices.filter(v =>
         v.lang && v.lang.toLowerCase().startsWith("de")
       );
-
       if (germanVoices.length === 0) return null;
       if (gender === "auto") return germanVoices[0];
-
       const hints = gender === "female" ? FEMALE_VOICE_HINTS : MALE_VOICE_HINTS;
-
       // 1. Versuch: exakter Name-Match
       let match = germanVoices.find(v =>
         hints.some(hint => v.name.toLowerCase().includes(hint))
       );
-
       // 2. Versuch: über localService / default-Eigenschaften (manche Android-Geräte)
       if (!match && gender === "male") {
         match = germanVoices.find(v =>
@@ -965,11 +973,9 @@
           (v.voiceURI && v.voiceURI.toLowerCase().includes("female"))
         );
       }
-
       // Fallback: erste deutsche Stimme
       return match || germanVoices[0];
     }
-
     // Stimmen einmal laden (manche Browser brauchen das)
     if (window.speechSynthesis) {
       window.speechSynthesis.onvoiceschanged = () => {
@@ -978,11 +984,32 @@
       // Sofort versuchen
       window.speechSynthesis.getVoices();
     }
-
     const alarmSound = new Audio("assets/hahn.mp3");
     alarmSound.loop = true;
     alarmSound.preload = "auto";
-
+    /* ================= EIGENER WECKSOUND ================= */
+    soundFileInput.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file && file.type.startsWith("audio/")) {
+        // Alte Object-URL freigeben
+        if (customSoundUrl) {
+          URL.revokeObjectURL(customSoundUrl);
+        }
+        customSoundUrl = URL.createObjectURL(file);
+        alarmSound.src = customSoundUrl;
+        alarmSound.load();
+        usingCustomSound = true;
+      } else if (!file) {
+        // Zurück auf Standard-Hahn
+        if (customSoundUrl) {
+          URL.revokeObjectURL(customSoundUrl);
+          customSoundUrl = null;
+        }
+        alarmSound.src = "assets/hahn.mp3";
+        alarmSound.load();
+        usingCustomSound = false;
+      }
+    });
     /* ================= ALARM LOGIK ================= */
     function setAlarm() {
       const input = document.getElementById("alarm-input").value;
@@ -991,35 +1018,29 @@
         alarmStatus.classList.add("active");
         return;
       }
-
       alarmMode = alarmModeSelect.value;
       alarmText = alarmTextInput.value.trim();
       alarmVoiceGender = voiceGenderSelect.value;
-
       if (alarmMode === "text" && !alarmText) {
         alarmStatus.textContent = "Bitte einen Wecktext eingeben!";
         alarmStatus.classList.add("active");
         alarmStatus.classList.remove("triggered");
         return;
       }
-
       // Audio / Speech freischalten (wichtig für Mobile)
       alarmSound.play().then(() => {
         alarmSound.pause();
         alarmSound.currentTime = 0;
       }).catch(() => {});
-
       if (window.speechSynthesis) {
         const unlock = new SpeechSynthesisUtterance(" ");
         unlock.volume = 0;
         window.speechSynthesis.speak(unlock);
         window.speechSynthesis.cancel();
       }
-
       // Nächste Auslösezeit berechnen (kann nächster Tag sein)
       const now = new Date();
       const [ah, am] = input.split(":").map(Number);
-
       targetAlarmDate = new Date(
         now.getFullYear(),
         now.getMonth(),
@@ -1029,94 +1050,78 @@
         0,
         0
       );
-
       // Wenn die Zeit heute schon vorbei ist → morgen
       if (targetAlarmDate.getTime() <= now.getTime()) {
         targetAlarmDate.setDate(targetAlarmDate.getDate() + 1);
       }
-
       alarmTime = input;
       alarmActive = true;
       alarmTriggered = false;
       speechLoopActive = false;
-
       requestWakeLock();
       updateAlarmStatus();
     }
-
     function stopAlarm() {
       alarmSound.pause();
       alarmSound.currentTime = 0;
       speechLoopActive = false;
-
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
-
       alarmActive = false;
       alarmTriggered = false;
       targetAlarmDate = null;
       releaseWakeLock();
       updateAlarmStatus();
     }
-
     function speakTextLoop(text) {
       if (!text || !window.speechSynthesis) return;
-
       speechLoopActive = true;
       window.speechSynthesis.cancel();
-
       function speakOnce() {
         if (!speechLoopActive) return;
-
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = "de-DE";
         utterance.rate = 0.95;
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
-
         const chosenVoice = pickGermanVoice(alarmVoiceGender);
         if (chosenVoice) {
           utterance.voice = chosenVoice;
         }
-
         utterance.onend = () => {
           if (speechLoopActive) {
             setTimeout(speakOnce, 700);
           }
         };
-
         utterance.onerror = () => {
           // Bei Fehler trotzdem weiter versuchen
           if (speechLoopActive) {
             setTimeout(speakOnce, 1200);
           }
         };
-
         window.speechSynthesis.speak(utterance);
       }
-
       speakOnce();
     }
-
     function updateAlarmStatus() {
       alarmStatus.classList.remove("active", "triggered");
-
       if (alarmActive && alarmTime && targetAlarmDate) {
         const timeStr = alarmTime;
         let dayHint = "";
-
         const now = new Date();
         const isTomorrow =
           targetAlarmDate.getDate() !== now.getDate() ||
           targetAlarmDate.getMonth() !== now.getMonth();
-
         if (isTomorrow) {
           dayHint = " (morgen)";
         }
-
         if (alarmMode === "sound") {
-          alarmStatus.textContent = "🐓 Hahn steht bereit — " + timeStr + dayHint;
+          if (usingCustomSound) {
+            alarmStatus.textContent = "🔊 Eigener Wecksound steht bereit — " + timeStr + dayHint;
+          } else {
+            alarmStatus.textContent = "🐓 Hahn steht bereit — " + timeStr + dayHint;
+          }
         } else {
           alarmStatus.textContent =
             "🗣️ Wecktext steht bereit — " + timeStr + dayHint + " | „" + alarmText + "“";
@@ -1126,21 +1131,17 @@
         alarmStatus.textContent = "Kein Wecker aktiv";
       }
     }
-
     function pad(n) {
       return n.toString().padStart(2, "0");
     }
-
     function updateClock() {
       const now = new Date();
       const hours = now.getHours();
       const minutes = now.getMinutes();
       const seconds = now.getSeconds();
-
       timeDisplay.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
       dateDisplay.textContent =
         `${pad(now.getDate())}.${pad(now.getMonth() + 1)}.${now.getFullYear()}`;
-
       // Tagesfortschritt
       const totalSeconds = 86400;
       const secondsPassed = hours * 3600 + minutes * 60 + seconds;
@@ -1149,7 +1150,6 @@
       progressBar.style.width = progressPct + "%";
       progressBall.style.left = progressPct + "%";
       progressPercent.textContent = Math.floor(progressPct) + " %";
-
       // ===== Alarm prüfen =====
       if (alarmActive && targetAlarmDate && !alarmTriggered) {
         // Auslösen, wenn die Zielzeit erreicht oder überschritten ist
@@ -1159,30 +1159,25 @@
           } else if (alarmMode === "text") {
             speakTextLoop(alarmText);
           }
-
           alarmTriggered = true;
           alarmStatus.classList.add("triggered");
           alarmStatus.classList.remove("active");
         }
       }
     }
-
     // Initial
     updateClock();
     setInterval(updateClock, 1000);
-
     /* Service Worker */
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("sw.js").catch(() => {});
       });
     }
-
     /* ================= INFO-MODAL ================= */
     const infoTrigger = document.getElementById("infoTrigger");
     const infoModal = document.getElementById("infoModal");
     const infoClose = document.getElementById("infoClose");
-
     function openInfoModal() {
       infoModal.classList.add("is-open");
       infoModal.setAttribute("aria-hidden", "false");
@@ -1193,18 +1188,15 @@
       infoModal.setAttribute("aria-hidden", "true");
       infoTrigger.focus();
     }
-
     infoTrigger.addEventListener("click", openInfoModal);
     infoClose.addEventListener("click", closeInfoModal);
     infoModal.addEventListener("click", (event) => {
       if (event.target === infoModal) closeInfoModal();
     });
-
     /* ================= KAFFEE-MODAL ================= */
     const coffeeTrigger = document.getElementById("coffeeTrigger");
     const coffeeModal = document.getElementById("coffeeModal");
     const coffeeClose = document.getElementById("coffeeClose");
-
     function openCoffeeModal() {
       coffeeModal.classList.add("is-open");
       coffeeModal.setAttribute("aria-hidden", "false");
@@ -1215,13 +1207,11 @@
       coffeeModal.setAttribute("aria-hidden", "true");
       coffeeTrigger.focus();
     }
-
     coffeeTrigger.addEventListener("click", openCoffeeModal);
     coffeeClose.addEventListener("click", closeCoffeeModal);
     coffeeModal.addEventListener("click", (event) => {
       if (event.target === coffeeModal) closeCoffeeModal();
     });
-
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
         if (infoModal.classList.contains("is-open")) closeInfoModal();
